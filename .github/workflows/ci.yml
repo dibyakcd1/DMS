@@ -35,11 +35,15 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install dependencies
+<<<<<<< HEAD
         # npm ci requires every platform-specific optional dependency to be
         # represented in package-lock.json. This project's lockfile was
         # generated without those optional packages, so use npm install to
         # resolve them correctly on the Linux GitHub runner.
         run: npm install --include=optional --no-audit --no-fund
+=======
+        run: npm ci
+>>>>>>> c914ba835256ba804a6a8933e34b0c4fe55d34c5
 
       - name: Build Web App
         run: npm run build
@@ -77,11 +81,15 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install dependencies
+<<<<<<< HEAD
         # npm ci requires every platform-specific optional dependency to be
         # represented in package-lock.json. This project's lockfile was
         # generated without those optional packages, so use npm install to
         # resolve them correctly on the Linux GitHub runner.
         run: npm install --include=optional --no-audit --no-fund
+=======
+        run: npm ci
+>>>>>>> c914ba835256ba804a6a8933e34b0c4fe55d34c5
 
       - name: Build Web Assets
         run: npm run build
