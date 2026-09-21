@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
@@ -18,11 +18,15 @@ concurrency:
 
 jobs:
   # ============================================================
-  # 1. BUILD WEB APP + DEPLOY TO GITHUB PAGES
+  # BUILD WEB + DEPLOY TO GITHUB PAGES
   # ============================================================
-  build-and-deploy-web:
+  deploy-pages:
     name: Build & Deploy Web App
     runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout repository
@@ -47,15 +51,20 @@ jobs:
       - name: Create SPA 404 fallback
         run: cp dist/index.html dist/404.html
 
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
         with:
-          folder: dist
-          branch: gh-pages
-          clean: true
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
   # ============================================================
-  # 2. BUILD ANDROID APK
+  # BUILD ANDROID APK
   # ============================================================
   build-android:
     name: Build Android APK
