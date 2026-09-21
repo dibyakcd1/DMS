@@ -47,7 +47,32 @@ import { PrinterProvider } from "./printer/PrinterProvider";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const Router = Capacitor.isNativePlatform() ? HashRouter : BrowserRouter;
-const browserBasename = import.meta.env.BASE_URL === "./" ? undefined : import.meta.env.BASE_URL;
+
+// Vite is built with `base: './'` (relative asset paths) so that the app works
+// no matter which subfolder GitHub Pages serves it from. Because of that,
+// `import.meta.env.BASE_URL` is always the literal string "./" at runtime -
+// it never reflects the actual deployed path (e.g. "/my-repo/"). Using it to
+// derive the router's `basename` (as before) meant `basename` was always
+// `undefined`, so on the very first load React Router tried to match the
+// *real* URL (e.g. "/my-repo/") against routes defined relative to "/" -
+// that never matches, so it fell through to the `*` -> <NotFound /> route.
+// Once "Go back home" set the URL to "/" via client-side navigation, it
+// matched correctly, which is why the app "worked" only after that click.
+//
+// Fix: derive the basename at runtime from the actual URL the JS bundle was
+// loaded from, using this module's own `import.meta.url`. Vite emits bundled
+// assets under an "/assets/" folder, so whatever precedes "/assets/" in the
+// resolved script URL is the real deployment subfolder - root page, GitHub
+// Pages project subpath, or anything else - with no hardcoding required.
+const browserBasename = (() => {
+  try {
+    const scriptPath = new URL(import.meta.url).pathname;
+    const assetsIndex = scriptPath.indexOf("/assets/");
+    return assetsIndex > 0 ? scriptPath.slice(0, assetsIndex) : undefined;
+  } catch {
+    return undefined;
+  }
+})();
 
 const queryClient = new QueryClient({
   defaultOptions: {
