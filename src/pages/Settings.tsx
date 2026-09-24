@@ -41,6 +41,7 @@ import { PrinterSettings } from "@/components/PrinterSettings";
 import { CompaniesManagementTab } from "@/components/settings/CompaniesManagementTab";
 import { SchemesManagementTab } from "@/components/settings/SchemesManagementTab";
 import { DatabaseMaintenanceTab } from "@/components/settings/DatabaseMaintenanceTab";
+import { GeminiSettingsCard } from "@/components/settings/GeminiSettingsCard";
 
 import { 
   ResponsiveContainer, 
@@ -396,83 +397,87 @@ export default function Settings() {
 
               {activeTab === "preferences" && (
                 isAdmin ? (
-                  <Card className="border border-slate-100 shadow-sm rounded-2xl overflow-hidden bg-white">
-                  <CardHeader className="p-4 sm:p-5 pb-3">
-                    <CardTitle className="text-lg font-bold tracking-tight">Preferences</CardTitle>
-                    <CardDescription className="text-slate-400 text-xs mt-0.5">Display and reporting defaults.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4 sm:p-5 pt-2 space-y-5">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-600 block mb-1">
-                           Reporting period
-                        </Label>
-                        <Select 
-                          value={settings.reportingPeriod} 
-                          onValueChange={(v) => handleUpdate('reportingPeriod', v as "daily" | "weekly" | "monthly")}
-                        >
-                          <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-slate-200/80 font-bold text-sm text-slate-800 px-4 focus:ring-primary shadow-sm transition-all focus:bg-white hover:bg-slate-100/50">
-                            <SelectValue placeholder="Period" />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-2xl border-slate-200 shadow-xl p-1.5 bg-white">
-                            <SelectItem value="daily" className="text-xs sm:text-sm font-bold py-2 rounded-xl">Daily</SelectItem>
-                            <SelectItem value="weekly" className="text-xs sm:text-sm font-bold py-2 rounded-xl">Weekly</SelectItem>
-                            <SelectItem value="monthly" className="text-xs sm:text-sm font-bold py-2 rounded-xl">Monthly</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
- 
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-600 block mb-1">
-                          GST rounding
-                        </Label>
-                        <Select 
-                          value={settings.gstRounding} 
-                          onValueChange={(v) => handleUpdate('gstRounding', v as "round" | "ceil" | "floor")}
-                        >
-                          <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-slate-200/80 font-bold text-sm text-slate-800 px-4 focus:ring-primary shadow-sm transition-all focus:bg-white hover:bg-slate-100/50">
-                            <SelectValue placeholder="Logic" />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-2xl border-slate-200 shadow-xl p-1.5 bg-white">
-                            <SelectItem value="round" className="text-xs sm:text-sm font-bold py-2 rounded-xl">Round</SelectItem>
-                            <SelectItem value="ceil" className="text-xs sm:text-sm font-bold py-2 rounded-xl">Ceiling</SelectItem>
-                            <SelectItem value="floor" className="text-xs sm:text-sm font-bold py-2 rounded-xl">Floor</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
- 
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-600 block mb-1">
-                          Low stock alert threshold
-                        </Label>
-                        <div className="relative">
-                          <Input 
-                            type="number" 
-                            value={settings.lowStockThreshold} 
-                            onChange={(e) => handleUpdate('lowStockThreshold', Number(e.target.value))}
-                            className="h-11 rounded-xl bg-slate-50 border-slate-200/80 font-bold text-sm text-slate-800 pl-4 pr-16 focus:ring-primary focus:bg-white shadow-sm transition-all" 
-                          />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Units</span>
+                  <div className="space-y-6">
+                    <GeminiSettingsCard />
+                    
+                    <Card className="border border-slate-100 shadow-sm rounded-2xl overflow-hidden bg-white">
+                      <CardHeader className="p-4 sm:p-5 pb-3">
+                        <CardTitle className="text-lg font-bold tracking-tight">Preferences</CardTitle>
+                        <CardDescription className="text-slate-400 text-xs mt-0.5">Display and reporting defaults.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="p-4 sm:p-5 pt-2 space-y-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-bold text-slate-600 block mb-1">
+                               Reporting period
+                            </Label>
+                            <Select 
+                              value={settings.reportingPeriod} 
+                              onValueChange={(v) => handleUpdate('reportingPeriod', v as "daily" | "weekly" | "monthly")}
+                            >
+                              <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-slate-200/80 font-bold text-sm text-slate-800 px-4 focus:ring-primary shadow-sm transition-all focus:bg-white hover:bg-slate-100/50">
+                                <SelectValue placeholder="Period" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-2xl border-slate-200 shadow-xl p-1.5 bg-white">
+                                <SelectItem value="daily" className="text-xs sm:text-sm font-bold py-2 rounded-xl">Daily</SelectItem>
+                                <SelectItem value="weekly" className="text-xs sm:text-sm font-bold py-2 rounded-xl">Weekly</SelectItem>
+                                <SelectItem value="monthly" className="text-xs sm:text-sm font-bold py-2 rounded-xl">Monthly</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+     
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-bold text-slate-600 block mb-1">
+                              GST rounding mode
+                            </Label>
+                            <Select 
+                              value={settings.gstRounding} 
+                              onValueChange={(v) => handleUpdate('gstRounding', v as "round" | "ceil" | "floor")}
+                            >
+                              <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-slate-200/80 font-bold text-sm text-slate-800 px-4 focus:ring-primary shadow-sm transition-all focus:bg-white hover:bg-slate-100/50">
+                                <SelectValue placeholder="Logic" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-2xl border-slate-200 shadow-xl p-1.5 bg-white">
+                                <SelectItem value="round" className="text-xs sm:text-sm font-bold py-2 rounded-xl">Round</SelectItem>
+                                <SelectItem value="ceil" className="text-xs sm:text-sm font-bold py-2 rounded-xl">Ceiling</SelectItem>
+                                <SelectItem value="floor" className="text-xs sm:text-sm font-bold py-2 rounded-xl">Floor</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+     
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-bold text-slate-600 block mb-1">
+                              Low stock alert threshold
+                            </Label>
+                            <div className="relative">
+                              <Input 
+                                type="number" 
+                                value={settings.lowStockThreshold} 
+                                onChange={(e) => handleUpdate('lowStockThreshold', Number(e.target.value))}
+                                className="h-11 rounded-xl bg-slate-50 border-slate-200/80 font-bold text-sm text-slate-800 pl-4 pr-16 focus:ring-primary focus:bg-white shadow-sm transition-all" 
+                              />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Units</span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
- 
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-5 border-t border-slate-100">
-                      <Button 
-                        variant="ghost" 
-                        onClick={handleReset}
-                        className="w-full sm:w-auto text-xs font-bold text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center gap-2 h-10 px-4 rounded-xl transition-all group"
-                      >
-                        <RotateCcw size={15} className="group-hover:-rotate-180 transition-transform duration-500" /> 
-                        Purge Memory & Reset
-                      </Button>
-                      <div className="flex items-center gap-2 self-center">
-                         <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">System State: Synchronized</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+     
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-5 border-t border-slate-100">
+                          <Button 
+                            variant="ghost" 
+                            onClick={handleReset}
+                            className="w-full sm:w-auto text-xs font-bold text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center gap-2 h-10 px-4 rounded-xl transition-all group"
+                          >
+                            <RotateCcw size={15} className="group-hover:-rotate-180 transition-transform duration-500" /> 
+                            Purge Memory & Reset
+                          </Button>
+                          <div className="flex items-center gap-2 self-center">
+                             <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">System State: Synchronized</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                 ) : <RestrictedFallback />
               )}
 

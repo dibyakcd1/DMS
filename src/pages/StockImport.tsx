@@ -43,6 +43,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ProductMappingCombobox } from "@/components/stock/ProductMappingCombobox";
 import { CompanyResolutionModal } from "@/components/stock/CompanyResolutionModal";
+import { GeminiApiKeyModal } from "@/components/stock/GeminiApiKeyModal";
 import { 
   BRAND_VALIDATION_RULES, 
   validateItemForBrand, 
@@ -119,7 +120,9 @@ export default function StockImport() {
     isBulkImportOpen,
     setIsBulkImportOpen,
     bulkStep,
-    setBulkStep
+    setBulkStep,
+    apiKeyModalOpen,
+    setApiKeyModalOpen
   } = useStockImport(products);
 
   const companies = availableCompanies || [];
@@ -449,6 +452,12 @@ export default function StockImport() {
         totalFreight={totalFreight}
         totalHandling={totalHandling}
         onOpenCompanyModal={() => setCompanyPromptOpen(true)}
+        onOpenApiKeyModal={() => setApiKeyModalOpen(true)}
+      />
+
+      <GeminiApiKeyModal
+        open={apiKeyModalOpen}
+        onOpenChange={setApiKeyModalOpen}
       />
 
       <CompanyResolutionModal
@@ -780,7 +789,8 @@ function BulkImportWizard({
   avgProfit,
   totalFreight,
   totalHandling,
-  onOpenCompanyModal
+  onOpenCompanyModal,
+  onOpenApiKeyModal
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -808,6 +818,7 @@ function BulkImportWizard({
   totalFreight: string;
   totalHandling: string;
   onOpenCompanyModal?: () => void;
+  onOpenApiKeyModal?: () => void;
 }) {
   const companies = availableCompanies || [];
   const [selectedBrandCode, setSelectedBrandCode] = useState<string>("DEFAULT");
@@ -1552,6 +1563,22 @@ function BulkImportWizard({
                     className="h-9 text-xs font-mono font-bold rounded-xl border-zinc-200 bg-zinc-50/70 uppercase"
                   />
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between pb-1 px-1">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-600">
+                  <Sparkles className="h-3.5 w-3.5 text-blue-600" />
+                  <span>Accepts PDF, JPG/PNG, Excel (.xlsx/.xls), and CSV</span>
+                </div>
+                {onOpenApiKeyModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenApiKeyModal}
+                    className="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 bg-blue-50/80 hover:bg-blue-100 px-2.5 py-1 rounded-lg border border-blue-200/60 transition-colors"
+                  >
+                    <span>🔑 Setup Gemini Key</span>
+                  </button>
+                )}
               </div>
 
               <Tabs defaultValue="upload">

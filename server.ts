@@ -58,10 +58,12 @@ async function startServer() {
   // High-availability model cascade for AI invoice parsing & general generation
   // Uses active Gemini models with rapid fallback
   const CANDIDATE_MODELS = [
-    "gemini-3.8-flash",
-    "gemini-3.6-flash",
-    "gemini-flash-latest",
+    "gemini-3.5-flash",
     "gemini-3.1-flash-lite",
+    "gemini-3.7-flash",
+    "gemini-flash-latest",
+    "gemini-3.6-flash",
+    "gemini-3.8-flash",
   ];
 
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));

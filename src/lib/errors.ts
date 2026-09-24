@@ -16,9 +16,10 @@ const USER_MESSAGES: Record<string, string> = {
   'load failed': 'Network error. Please check your internet connection.',
   'invalid login credentials': 'Invalid email or password.',
   'email not confirmed': 'Your email is not confirmed. Please check your inbox for the confirmation link or contact an administrator.',
-  'leaked': 'Your Gemini API Key has been reported as leaked or blocked by Google. Please update it in the Settings menu (Gear Icon) in the top-right of the AI Studio workspace.',
-  'api key': 'Your Gemini API Key is missing, invalid, or leaked. Please configure it in the Settings menu (Gear Icon) in the top-right of the AI Studio workspace.',
-  'permission_denied': 'Access denied or API Key is invalid. Please check your Gemini API key in the Settings menu.',
+  'gemini_key_required': 'A Google Gemini API Key is required to scan image and PDF invoices on static Git hosting. Please configure it in Settings or click Setup AI Key.',
+  'leaked': 'Your Gemini API Key has been reported as leaked or blocked by Google. Please update it in Settings.',
+  'api key': 'Your Gemini API Key is missing, invalid, or leaked. Please configure it in Settings.',
+  'permission_denied': 'Access denied or API Key is invalid. Please check your Gemini API key in Settings.',
 };
 
 export function friendlyError(err: unknown): string {

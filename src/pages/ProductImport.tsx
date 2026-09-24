@@ -21,6 +21,7 @@ import { productImportService } from "@/services/productImportService";
 import type { ImportSummary } from "@/services/productImportService";
 import { extractProductsFromCSV, extractProductsFromText, extractProductsFromMedia } from "@/services/geminiService";
 import { sanitizeProductForDb, persistProductToSupabase } from "@/lib/packaging";
+import { GeminiApiKeyModal } from "@/components/stock/GeminiApiKeyModal";
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -64,6 +65,7 @@ export default function ProductImport() {
   const [activeTab, setActiveTab] = React.useState<"standard" | "ai">("standard");
   const [parsing, setParsing] = React.useState(false);
   const [pastedText, setPastedText] = React.useState("");
+  const [apiKeyModalOpen, setApiKeyModalOpen] = React.useState(false);
 
   const handleAISmartFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -102,8 +104,12 @@ export default function ProductImport() {
       } else {
         throw new Error("No products could be extracted. Please check the file content.");
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("[Context]", err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      if (errMsg.includes("GEMINI_KEY") || errMsg.includes("api key") || errMsg.includes("GEMINI_KEY_REQUIRED") || errMsg.includes("leaked")) {
+        setApiKeyModalOpen(true);
+      }
       toast.error(friendlyError(err), { id: toastId });
     } finally {
       setParsing(false);
@@ -129,8 +135,12 @@ export default function ProductImport() {
       } else {
         throw new Error("No products could be extracted. Check format or headers.");
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("[Context]", err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      if (errMsg.includes("GEMINI_KEY") || errMsg.includes("api key") || errMsg.includes("GEMINI_KEY_REQUIRED") || errMsg.includes("leaked")) {
+        setApiKeyModalOpen(true);
+      }
       toast.error(friendlyError(err), { id: toastId });
     } finally {
       setParsing(false);
@@ -462,26 +472,39 @@ export default function ProductImport() {
         return (
           <div className="space-y-6">
             {/* Elegant Custom Tab Selector */}
-            <div className="flex bg-muted/40 p-1.5 rounded-2xl border border-border/50 max-w-md">
-              <button
-                onClick={() => setActiveTab("standard")}
-                className={cn(
-                  "flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
-                  activeTab === "standard" ? "bg-white shadow-sm text-brand-primary" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Standard Import
-              </button>
-              <button
-                onClick={() => setActiveTab("ai")}
-                className={cn(
-                  "flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2",
-                  activeTab === "ai" ? "bg-white shadow-sm text-brand-primary" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Sparkles className="h-4 w-4 text-brand-primary" />
-                AI Smart Import
-              </button>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex bg-muted/40 p-1.5 rounded-2xl border border-border/50 max-w-md flex-1">
+                <button
+                  onClick={() => setActiveTab("standard")}
+                  className={cn(
+                    "flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+                    activeTab === "standard" ? "bg-white shadow-sm text-brand-primary" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Standard Import
+                </button>
+                <button
+                  onClick={() => setActiveTab("ai")}
+                  className={cn(
+                    "flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2",
+                    activeTab === "ai" ? "bg-white shadow-sm text-brand-primary" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Sparkles className="h-4 w-4 text-brand-primary" />
+                  AI Smart Import
+                </button>
+              </div>
+
+              {activeTab === "ai" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setApiKeyModalOpen(true)}
+                  className="rounded-xl border-border/80 text-xs font-bold gap-1.5 h-11"
+                >
+                  <span>🔑 Setup Gemini Key</span>
+                </Button>
+              )}
             </div>
 
             {activeTab === "standard" ? (
@@ -987,6 +1010,11 @@ export default function ProductImport() {
         </div>
 
         {renderStep()}
+
+        <GeminiApiKeyModal
+          open={apiKeyModalOpen}
+          onOpenChange={setApiKeyModalOpen}
+        />
       </div>
     </TooltipProvider>
   );
