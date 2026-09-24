@@ -419,6 +419,9 @@ export function useStockImport(products: Product[]) {
           // Fallback to Gemini CSV parser if structured headers couldn't be detected
           const csvText = XLSX.utils.sheet_to_csv(XLSX.read(arrayBuffer, { type: "array" }).Sheets[0]);
           const result = await extractInvoiceFromCSV(csvText);
+          if (result?.error && (!result.items || result.items.length === 0)) {
+            throw new Error(result.error);
+          }
           if (result?.items && result.items.length > 0) {
             extractedItems = result.items as ExtractedItem[];
             if (result.supplier_name) detectedSupplier = result.supplier_name;
@@ -431,6 +434,9 @@ export function useStockImport(products: Product[]) {
       } else if (file.type.startsWith("image/") || file.type === "application/pdf") {
         const base64 = await fileToBase64(file);
         const result = await extractInvoiceFromMedia(base64, file.type);
+        if (result?.error && (!result.items || result.items.length === 0)) {
+          throw new Error(result.error);
+        }
         if (result?.items) {
           extractedItems = result.items as ExtractedItem[];
           if (result.supplier_name) detectedSupplier = result.supplier_name;

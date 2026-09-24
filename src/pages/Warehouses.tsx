@@ -84,7 +84,7 @@ export default function Warehouses() {
   const filtered = warehouses.filter(w => 
     w.name.toLowerCase().includes(search.toLowerCase()) ||
     w.code?.toLowerCase().includes(search.toLowerCase()) ||
-    w.location?.toLowerCase().includes(search.toLowerCase())
+    (w.address || w.location)?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -161,7 +161,7 @@ export default function Warehouses() {
                         <div className="font-black text-base sm:text-lg uppercase tracking-tight text-foreground break-words leading-tight">{w.name}</div>
                         <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground font-bold mt-0.5 opacity-60">
                           <MapPin className="h-3 w-3 shrink-0" />
-                          <span className="break-words">{w.location || "No location specified"}</span>
+                          <span className="break-words">{w.address || w.location || "No location specified"}</span>
                         </div>
                       </div>
                     </div>

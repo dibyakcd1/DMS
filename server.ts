@@ -5,7 +5,7 @@ import fs from 'fs';
 // Initialize dotenv from standard .env
 dotenv.config({ override: true });
 
-// Check if .env or .env.example has a user-defined GEMINI_API_KEY to override system/container environment values
+// Check if user specified a custom GEMINI_API_KEY in .env
 const loadCustomApiKey = () => {
   const cleanVal = (val: string) => {
     let cleaned = val.trim();
@@ -19,19 +19,6 @@ const loadCustomApiKey = () => {
     const envPath = path.resolve(process.cwd(), '.env');
     if (fs.existsSync(envPath)) {
       const content = fs.readFileSync(envPath, 'utf-8');
-      const match = content.match(/^GEMINI_API_KEY\s*=\s*(.+)$/m);
-      if (match && match[1]) {
-        const cleaned = cleanVal(match[1]);
-        if (cleaned) {
-          process.env.GEMINI_API_KEY = cleaned;
-          return;
-        }
-      }
-    }
-
-    const envExamplePath = path.resolve(process.cwd(), '.env.example');
-    if (fs.existsSync(envExamplePath)) {
-      const content = fs.readFileSync(envExamplePath, 'utf-8');
       const match = content.match(/^GEMINI_API_KEY\s*=\s*(.+)$/m);
       if (match && match[1]) {
         const cleaned = cleanVal(match[1]);
@@ -71,10 +58,10 @@ async function startServer() {
   // High-availability model cascade for AI invoice parsing & general generation
   // Uses active Gemini models with rapid fallback
   const CANDIDATE_MODELS = [
+    "gemini-3.8-flash",
     "gemini-3.6-flash",
     "gemini-flash-latest",
     "gemini-3.1-flash-lite",
-    "gemini-3.7-flash",
   ];
 
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -100,7 +87,7 @@ async function startServer() {
     try {
       const rawApiKey = process.env.GEMINI_API_KEY;
       if (!rawApiKey || !rawApiKey.trim()) {
-        res.status(503).json({ error: 'AI generation is not configured. Please set GEMINI_API_KEY.' });
+        res.status(500).json({ error: 'AI generation is not configured. Please set GEMINI_API_KEY.' });
         return;
       }
 
@@ -128,23 +115,30 @@ async function startServer() {
       let result = null;
       let lastError: unknown = null;
 
-      // Iterate through candidate models across different clusters
+      // Iterate through candidate models across different clusters with retry
       for (const modelToUse of CANDIDATE_MODELS) {
-        try {
-          result = await genAI.models.generateContent({
-            model: modelToUse,
-            contents,
-          });
-          if (result && result.text) {
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            result = await genAI.models.generateContent({
+              model: modelToUse,
+              contents,
+            });
+            if (result && result.text) {
+              break;
+            }
+          } catch (error: unknown) {
+            lastError = error;
+            const errMsg = error instanceof Error ? error.message : String(error);
+            const isHighDemand = errMsg.includes('503') || errMsg.includes('demand') || errMsg.includes('UNAVAILABLE') || errMsg.includes('RESOURCE_EXHAUSTED');
+            if (attempt === 0 && isHighDemand) {
+              await delay(800);
+              continue;
+            }
             break;
           }
-        } catch (error: unknown) {
-          lastError = error;
-          const errMsg = error instanceof Error ? error.message : String(error);
-          console.warn(`Gemini (${modelToUse}) notice:`, errMsg);
-
-          // Fast 300ms pause before trying next candidate model in cascade
-          await delay(300);
+        }
+        if (result && result.text) {
+          break;
         }
       }
 
@@ -182,14 +176,13 @@ async function startServer() {
 
       throw lastError || new Error("AI generation service is temporarily experiencing high traffic across models.");
     } catch (error) {
-      console.error('Gemini Proxy Error after cascade retries:', error);
       let errMsg = error instanceof Error ? error.message : 'AI generation failed';
       if (errMsg.includes('leaked') || errMsg.includes('API key was reported as leaked') || errMsg.includes('PERMISSION_DENIED') || errMsg.includes('403')) {
         errMsg = "Your Gemini API Key has been reported as leaked or blocked. Please update it in the Settings menu (Gear Icon) in the top-right of the AI Studio workspace to proceed with AI features.";
       } else if (errMsg.includes('503') || errMsg.includes('demand') || errMsg.includes('temporary') || errMsg.includes('UNAVAILABLE') || errMsg.includes('overloaded')) {
-        errMsg = "The AI service is currently experiencing high demand. Please try again in a moment or use the direct CSV/tabular import.";
+        errMsg = "The AI service is experiencing a temporary demand spike across models. Please retry in a few moments, or use CSV/Excel import for immediate processing.";
       }
-      res.status(503).json({ error: errMsg });
+      res.status(500).json({ error: errMsg });
     }
   });
 

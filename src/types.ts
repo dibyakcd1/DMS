@@ -244,8 +244,11 @@ export type Warehouse = {
   id: string;
   name: string;
   code: string | null;
-  location: string | null;
+  address?: string | null;
+  location?: string | null;
   is_active: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
 };
 
 export type WarehouseTransfer = {

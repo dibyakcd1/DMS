@@ -1,7 +1,7 @@
 {
-  "name": "tatvisha-distribution-system",
+  "name": "dms-v1.0-pro",
   "private": false,
-  "description": "Professional Distribution & Inventory Management System for Tatvisha Enterprises",
+  "description": "Professional Distribution & Inventory Management System (DMSv1.0-pro)",
   "version": "1.0.0",
   "type": "module",
   "scripts": {

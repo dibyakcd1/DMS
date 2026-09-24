@@ -1,7 +1,7 @@
 {
-  "name": "Tatvisha Enterprises",
-  "short_name": "Tatvisha",
-  "description": "Spice Distribution & Inventory Management",
+  "name": "DMSv1.0-pro",
+  "short_name": "DMSv1.0-pro",
+  "description": "Professional Distribution & Inventory Management System",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",

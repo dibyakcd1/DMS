@@ -57,9 +57,9 @@ export function MobileMenu({
         <div className="flex-1 overflow-y-auto p-4 space-y-8 pb-32 scrollbar-none pt-8">
           <div className="flex items-center gap-3 px-3 mb-8">
              <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-white shadow-brand">
-              <span className="text-base font-black tracking-tighter">TE</span>
+              <span className="text-xs font-black tracking-tighter">DMS</span>
             </div>
-            <p className="text-lg font-black tracking-tighter text-slate-900 uppercase">Tatvisha</p>
+            <p className="text-lg font-black tracking-tighter text-slate-900">DMSv1.0-pro</p>
           </div>
 
           <div className="space-y-1.5">

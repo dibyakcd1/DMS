@@ -186,11 +186,14 @@ async function callGeminiProxy(payload: { prompt: string; fileData?: string; mim
         return data.text || '';
       } else {
         const rawText = await response.text();
+        if (rawText.trim().startsWith('<') || rawText.includes('<!doctype') || rawText.includes('<html')) {
+          throw new Error("AI service temporarily returned an HTML page. Please retry in a moment.");
+        }
         return rawText || '';
       }
     } catch (error: unknown) {
       lastError = error instanceof Error ? error : new Error(String(error));
-      console.error(`Gemini Client Attempt ${attempt} failed:`, lastError.message);
+      console.log(`[Gemini Client] Notice on attempt ${attempt}:`, lastError.message);
       
       if (attempt === maxAttempts) {
         break;
@@ -211,11 +214,19 @@ export async function extractInvoiceFromMedia(
   const prompt = `Extract purchase invoice details from this image/PDF.\n${INVOICE_JSON_SCHEMA}`;
   try {
     const text = await callGeminiProxy({ prompt, fileData, mimeType });
-    const clean = text.replace(/```json|```/g, "").trim();
+    if (!text || text.trim().startsWith('<') || text.includes('<!doctype')) {
+      return { error: "Could not parse AI response. Please verify the document format or try again." };
+    }
+    let clean = text.replace(/```json|```/g, "").trim();
+    const firstBrace = clean.indexOf('{');
+    const lastBrace = clean.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      clean = clean.slice(firstBrace, lastBrace + 1);
+    }
     return JSON.parse(clean) as ExtractionResult;
   } catch (error) {
-    console.error("Gemini Media Extraction Error:", error);
-    return { error: error instanceof Error ? error.message : "AI extraction failed" };
+    const msg = error instanceof Error ? error.message : "AI extraction failed";
+    return { error: msg };
   }
 }
 

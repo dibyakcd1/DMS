@@ -116,13 +116,13 @@ export default function Auth() {
       <Card className="w-full max-w-sm border border-white/30 glass-card shadow-2xl transition-all animate-fade-in hover:shadow-brand p-2 rounded-[2.5rem]">
         <CardHeader className="space-y-1 text-center pb-8 pt-8">
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-brand-gradient shadow-brand ring-4 ring-white/30 backdrop-blur-sm transform hover:scale-110 transition-transform duration-500">
-            <span className="text-3xl font-black tracking-tighter text-white">TE</span>
+            <span className="text-2xl font-black tracking-tighter text-white">DMS</span>
           </div>
           <CardTitle className="text-xl font-black uppercase tracking-widest text-brand-primary">
-            {isSignUp ? "Create Account" : "Secure Terminal"}
+            {isSignUp ? "Create Account" : "DMSv1.0-pro"}
           </CardTitle>
           <CardDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
-            {isSignUp ? "Register new credentials" : "Enter credentials"}
+            {isSignUp ? "Register new credentials" : "Enter terminal credentials"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -220,7 +220,7 @@ export default function Auth() {
                 )}
               </div>
               
-              <p className="text-xs font-medium text-muted-foreground">For Tatvisha Enterprises staff only</p>
+              <p className="text-xs font-medium text-muted-foreground">For DMSv1.0-pro staff only</p>
               <button
                 type="button"
                 onClick={() => navigate('/pin-login')}

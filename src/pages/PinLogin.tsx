@@ -146,7 +146,7 @@ export default function PinLogin() {
           {!selectedUser ? (
             <>
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-gradient shadow-brand">
-                 <span className="text-xl font-black text-white">TE</span>
+                 <span className="text-sm font-black text-white">DMS</span>
               </div>
               <CardTitle className="text-2xl font-black tracking-tight text-brand-primary">Select your name</CardTitle>
               <CardDescription className="text-xs font-medium">Choose your name to sign in</CardDescription>

@@ -59,12 +59,12 @@ export function DesktopSidebar({
           className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary text-white shadow-brand cursor-pointer active:scale-95 transition-transform"
           onClick={() => onNavigate("/")}
         >
-          <span className="text-base font-bold tracking-tighter">TE</span>
+          <span className="text-xs font-black tracking-tighter">DMS</span>
         </div>
         {!sidebarCollapsed && (
           <div className="flex flex-col animate-in fade-in slide-in-from-left-4 duration-300">
             <div className="flex items-center gap-2">
-              <div className="text-sm font-extrabold tracking-tight text-primary leading-tight uppercase">Dashboard</div>
+              <div className="text-sm font-extrabold tracking-tight text-primary leading-tight">DMSv1.0-pro</div>
               {loadingData && <div className="h-3 w-3 animate-spin border-2 border-primary/40 border-t-transparent rounded-full" />}
             </div>
             <div className="text-[10px] font-bold text-muted-foreground leading-none mt-1 uppercase tracking-widest opacity-60">

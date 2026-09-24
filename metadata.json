@@ -1,6 +1,6 @@
 {
-  "name": "Tatvisha Distribution System",
-  "description": "Professional Distribution & Inventory Management System for Tatvisha Enterprises",
+  "name": "DMSv1.0-pro",
+  "description": "Professional Distribution & Inventory Management System (DMSv1.0-pro)",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

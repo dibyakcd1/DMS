@@ -36,7 +36,7 @@ export function WarehouseDrawer({ open, onOpenChange, onSaved, editingWarehouse 
         setFormData({
           name: editingWarehouse.name || "",
           code: editingWarehouse.code || "",
-          location: editingWarehouse.location || "",
+          location: editingWarehouse.address || editingWarehouse.location || "",
           is_active: editingWarehouse.is_active ?? true
         });
       } else {
@@ -55,26 +55,55 @@ export function WarehouseDrawer({ open, onOpenChange, onSaved, editingWarehouse 
     
     setSaving(true);
     try {
-      const payload = {
+      const locationVal = formData.location.trim() || null;
+      type WarehousePayload = {
+        name: string;
+        code: string | null;
+        address?: string | null;
+        location?: string | null;
+        is_active: boolean;
+        updated_at: string;
+      };
+
+      const payload: WarehousePayload = {
         name: formData.name.trim(),
         code: formData.code.trim() || null,
-        location: formData.location.trim() || null,
+        address: locationVal,
         is_active: formData.is_active,
         updated_at: new Date().toISOString()
       };
 
       let error;
       if (editingWarehouse) {
-        const { error: err } = await supabase
+        let res = await supabase
           .from('warehouses')
           .update(payload)
           .eq('id', editingWarehouse.id);
-        error = err;
+
+        // Fallback to location if address column is not found
+        if (res.error && res.error.code === 'PGRST204' && res.error.message.includes('address')) {
+          delete payload.address;
+          payload.location = locationVal;
+          res = await supabase
+            .from('warehouses')
+            .update(payload)
+            .eq('id', editingWarehouse.id);
+        }
+        error = res.error;
       } else {
-        const { error: err } = await supabase
+        let res = await supabase
           .from('warehouses')
           .insert(payload);
-        error = err;
+
+        // Fallback to location if address column is not found
+        if (res.error && res.error.code === 'PGRST204' && res.error.message.includes('address')) {
+          delete payload.address;
+          payload.location = locationVal;
+          res = await supabase
+            .from('warehouses')
+            .insert(payload);
+        }
+        error = res.error;
       }
 
       if (error) throw error;
