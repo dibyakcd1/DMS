@@ -107,7 +107,13 @@ export default function ProductImport() {
     } catch (err: unknown) {
       console.error("[Context]", err);
       const errMsg = err instanceof Error ? err.message : String(err);
-      if (errMsg.includes("GEMINI_KEY") || errMsg.includes("api key") || errMsg.includes("GEMINI_KEY_REQUIRED") || errMsg.includes("leaked")) {
+      if (
+        errMsg.includes("GEMINI_KEY") ||
+        errMsg.includes("api key") ||
+        errMsg.includes("GEMINI_KEY_REQUIRED") ||
+        errMsg.includes("leaked") ||
+        errMsg.includes("fetch")
+      ) {
         setApiKeyModalOpen(true);
       }
       toast.error(friendlyError(err), { id: toastId });
@@ -138,7 +144,13 @@ export default function ProductImport() {
     } catch (err: unknown) {
       console.error("[Context]", err);
       const errMsg = err instanceof Error ? err.message : String(err);
-      if (errMsg.includes("GEMINI_KEY") || errMsg.includes("api key") || errMsg.includes("GEMINI_KEY_REQUIRED") || errMsg.includes("leaked")) {
+      if (
+        errMsg.includes("GEMINI_KEY") ||
+        errMsg.includes("api key") ||
+        errMsg.includes("GEMINI_KEY_REQUIRED") ||
+        errMsg.includes("leaked") ||
+        errMsg.includes("fetch")
+      ) {
         setApiKeyModalOpen(true);
       }
       toast.error(friendlyError(err), { id: toastId });

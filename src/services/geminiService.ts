@@ -171,6 +171,8 @@ async function callGeminiDirectClient(payload: { prompt: string; fileData?: stri
     'gemini-3.8-flash',
   ];
 
+  let lastModelError: Error | null = null;
+
   for (const model of candidateModels) {
     try {
       const { GoogleGenAI } = await import('@google/genai');
@@ -195,7 +197,8 @@ async function callGeminiDirectClient(payload: { prompt: string; fileData?: stri
         return res.text;
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      lastModelError = err instanceof Error ? err : new Error(String(err));
+      const msg = lastModelError.message;
       console.warn(`[Gemini Client] Model ${model} direct call notice:`, msg);
       if (msg.includes("leaked") || msg.includes("403") || msg.includes("PERMISSION_DENIED")) {
         throw new Error("Your Gemini API Key is invalid, expired, or blocked. Please update it in Settings.");
@@ -210,10 +213,14 @@ async function callGeminiDirectClient(payload: { prompt: string; fileData?: stri
       ) {
         continue;
       }
-      // If last model, rethrow or return null
+      // For any other error, throw directly
+      throw lastModelError;
     }
   }
 
+  if (lastModelError) {
+    throw lastModelError;
+  }
   return null;
 }
 
@@ -221,26 +228,44 @@ async function callGeminiDirectClient(payload: { prompt: string; fileData?: stri
 async function callGeminiProxy(payload: { prompt: string; fileData?: string; mimeType?: string }): Promise<string> {
   const directKey = getGeminiApiKey();
 
-  // If running in browser and a direct user API key is available, check if we can try proxy or direct
-  // When hosted purely on GitHub/Git without Node.js, /api does not exist.
-  let isStaticGitHost = false;
-  if (typeof window !== "undefined") {
-    const host = window.location.hostname;
-    if (host.includes("github.io") || host.includes("gitlab.io") || host.includes("pages.dev")) {
-      isStaticGitHost = true;
+  // If user provided their own client API key, use direct client first (fast & reliable)
+  if (directKey) {
+    try {
+      const directResult = await callGeminiDirectClient(payload);
+      if (directResult) return directResult;
+    } catch (directErr) {
+      console.warn("[Gemini Proxy] Direct client call attempt returned:", directErr);
+      const msg = directErr instanceof Error ? directErr.message : String(directErr);
+      if (msg.includes("GEMINI_KEY") || msg.includes("API Key") || msg.includes("leaked") || msg.includes("blocked")) {
+        throw directErr;
+      }
     }
   }
 
-  // If known static Git host, jump directly to client Gemini call
-  if (isStaticGitHost) {
+  // Check if deployed statically without server
+  let isStaticHost = false;
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (
+      host.includes("github.io") ||
+      host.includes("gitlab.io") ||
+      host.includes("pages.dev") ||
+      host.includes("vercel.app") ||
+      host.includes("netlify.app")
+    ) {
+      isStaticHost = true;
+    }
+  }
+
+  if (isStaticHost) {
     if (!directKey) {
       throw new Error(
-        "GEMINI_KEY_REQUIRED: On static Git hosting, a Gemini API Key is required to scan images/PDFs. Please set your API Key to proceed."
+        "GEMINI_KEY_REQUIRED: On static hosting, a Google Gemini API Key is required to scan images/PDFs. Please set your API Key to proceed."
       );
     }
     const directResult = await callGeminiDirectClient(payload);
     if (directResult) return directResult;
-    throw new Error("Direct Gemini call failed. Please verify your Gemini API key.");
+    throw new Error("Direct Gemini call failed. Please check your Gemini API key.");
   }
 
   const maxAttempts = 2;
@@ -265,11 +290,13 @@ async function callGeminiProxy(payload: { prompt: string; fileData?: string; mim
           const textErr = await response.text().catch(() => "");
           if (response.status === 404 || textErr.includes('<!doctype') || textErr.includes('<html')) {
             // Attempt client-side direct generation immediately
-            const directText = await callGeminiDirectClient(payload);
-            if (directText) return directText;
+            if (directKey) {
+              const directText = await callGeminiDirectClient(payload);
+              if (directText) return directText;
+            }
 
             throw new Error(
-              "GEMINI_KEY_REQUIRED: AI backend service was not found (/api/gemini/generate returned HTML/404). On Git static hosting, please enter your free Google Gemini API Key."
+              "GEMINI_KEY_REQUIRED: AI backend service was not found (/api/gemini/generate returned HTML/404). On Git static hosting, please enter your Google Gemini API Key."
             );
           }
           throw new Error(`AI Service temporarily unavailable (${response.status})`);
@@ -282,8 +309,10 @@ async function callGeminiProxy(payload: { prompt: string; fileData?: string; mim
       } else {
         const rawText = await response.text();
         if (rawText.trim().startsWith('<') || rawText.includes('<!doctype') || rawText.includes('<html')) {
-          const directText = await callGeminiDirectClient(payload);
-          if (directText) return directText;
+          if (directKey) {
+            const directText = await callGeminiDirectClient(payload);
+            if (directText) return directText;
+          }
 
           throw new Error(
             "GEMINI_KEY_REQUIRED: AI backend service returned HTML. On Git static hosting, please enter your Google Gemini API Key."
@@ -299,6 +328,17 @@ async function callGeminiProxy(payload: { prompt: string; fileData?: string; mim
         throw lastError;
       }
 
+      // If network fetch failed, intercept gracefully
+      if (lastError.message.includes("Failed to fetch") || lastError.message.includes("fetch failed")) {
+        if (directKey) {
+          const directText = await callGeminiDirectClient(payload);
+          if (directText) return directText;
+        }
+        throw new Error(
+          "GEMINI_KEY_REQUIRED: AI backend service is unreachable. On Git static hosting, please configure your Google Gemini API Key to continue."
+        );
+      }
+
       if (attempt === maxAttempts) {
         break;
       }
@@ -308,12 +348,14 @@ async function callGeminiProxy(payload: { prompt: string; fileData?: string; mim
   }
 
   // Final fallback: try direct client key before giving up
-  const directText = await callGeminiDirectClient(payload);
-  if (directText) return directText;
+  if (directKey) {
+    const directText = await callGeminiDirectClient(payload);
+    if (directText) return directText;
+  }
 
   if (!directKey) {
     throw new Error(
-      "GEMINI_KEY_REQUIRED: On static Git hosting, a Gemini API Key is required to scan images/PDFs. Please set your API Key to proceed."
+      "GEMINI_KEY_REQUIRED: A Google Gemini API Key is required to scan images/PDFs. Please set your API Key to proceed."
     );
   }
 

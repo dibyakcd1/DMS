@@ -53,6 +53,9 @@ export function friendlyError(err: unknown): string {
   if (msg.startsWith("Database Error: ")) {
     msg = msg.replace("Database Error: ", "");
   }
+  if (msg.startsWith("GEMINI_KEY_REQUIRED: ")) {
+    return msg.replace("GEMINI_KEY_REQUIRED: ", "");
+  }
   if (msg.includes("Gemini") || msg.includes("API Key") || msg.includes("Settings") || msg.includes("leaked") || msg.includes("blocked")) {
     return msg;
   }
