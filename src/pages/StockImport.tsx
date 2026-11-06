@@ -70,8 +70,21 @@ export default function StockImport() {
 
   useEffect(() => {
     const fetchProducts = async () => {
-      const { data } = await supabase.from("products").select("*, inventory(quantity)").order("name");
-      if (data) setProducts((data as unknown) as Product[]);
+      const { data, error } = await supabase.from("products").select("*, inventory(stock_base_units, avg_landed_cost)").order("name");
+      if (error) console.error("[StockImport] products fetch failed:", error);
+      if (data) {
+        // inventory is one row per warehouse -> collapse into a single summed object
+        const normalised = (data as Array<Record<string, unknown>>).map(row => {
+          const inv = row.inventory as Array<{ stock_base_units?: number; avg_landed_cost?: number }> | { stock_base_units?: number; avg_landed_cost?: number } | null;
+          const rows = Array.isArray(inv) ? inv : inv ? [inv] : [];
+          const totalQty = rows.reduce((sum, r) => sum + (Number(r.stock_base_units) || 0), 0);
+          const wac = totalQty > 0
+            ? rows.reduce((sum, r) => sum + (Number(r.stock_base_units) || 0) * (Number(r.avg_landed_cost) || 0), 0) / totalQty
+            : (rows[0]?.avg_landed_cost ?? 0);
+          return { ...row, inventory: { stock_base_units: totalQty, avg_landed_cost: wac } };
+        });
+        setProducts((normalised as unknown) as Product[]);
+      }
       setLoading(false);
     };
     fetchProducts();

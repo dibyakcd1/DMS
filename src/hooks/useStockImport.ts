@@ -675,6 +675,7 @@ export function useStockImport(products: Product[]) {
     }
 
     const toastId = toast.loading("Generating GRN Record & Updating Stock...");
+    let createdGrnId: string | null = null;
     try {
       const commonBatch = defaultBatchNumber?.trim() || generateDefaultBatchNumber(invoiceNumber, invoiceDate);
 
@@ -683,7 +684,7 @@ export function useStockImport(products: Product[]) {
         .from("purchase_invoices")
         .insert({
           supplier_name: supplierName,
-          invoice_number: invoiceNumber,
+          invoice_number: invoiceNumber.trim() || `GRN-${Date.now()}`,
           invoice_date: invoiceDate,
           total_amount: stats.totalInvoicedValue,
           warehouse_id: targetWhId,
@@ -698,6 +699,7 @@ export function useStockImport(products: Product[]) {
         console.error('[Context]', grnError);
         throw grnError;
       }
+      createdGrnId = grn.id;
 
       // 2. Prepare line items for purchase_invoice_items
       const invoiceItems = items.map(item => {
@@ -843,7 +845,7 @@ export function useStockImport(products: Product[]) {
         });
 
         // Compute Blended WAC (One Source of Truth)
-        const existingQty = p?.inventory?.stock_base_units || p?.inventory?.quantity || 0;
+        const existingQty = p?.inventory?.stock_base_units || 0;
         const existingWacPerPcs = p?.inventory?.avg_landed_cost || p?.cost_price || 0;
         const wac = computeWacClient(existingQty, existingWacPerPcs, totalPcs, landedPerPcs, pricingProd, 'pcs');
 
@@ -975,24 +977,6 @@ export function useStockImport(products: Product[]) {
           console.warn("Recompute inventory fallback notice:", recErr);
         }
 
-        try {
-          const { data: bList } = await supabase
-            .from("inventory_batches")
-            .select("remaining_qty")
-            .eq("product_id", pid)
-            .gt("remaining_qty", 0);
-
-          const totalQty = bList?.reduce((sum, b) => sum + (Number(b.remaining_qty) || 0), 0) || 0;
-          await supabase
-            .from("inventory")
-            .upsert({
-              product_id: pid,
-              quantity: totalQty,
-              updated_at: new Date().toISOString()
-            }, { onConflict: "product_id" });
-        } catch (invDirectErr) {
-          console.warn("Direct inventory sync notice:", invDirectErr);
-        }
       }
 
       // 7. Record Stock Movements for audit and analytics
@@ -1140,7 +1124,14 @@ export function useStockImport(products: Product[]) {
       if (onSuccess) onSuccess();
     } catch (err: unknown) {
       console.error('[Context]', err);
-      toast.error(friendlyError(err), { id: toastId });
+      // No DB transaction here: remove the half-created GRN so a retry doesn't hit the UNIQUE invoice_number
+      if (createdGrnId) {
+        await supabase.from("inventory_batches").delete().eq("purchase_invoice_id", createdGrnId);
+        await supabase.from("purchase_invoice_items").delete().eq("purchase_invoice_id", createdGrnId);
+        await supabase.from("purchase_invoices").delete().eq("id", createdGrnId);
+      }
+      const detail = err && typeof err === "object" && "message" in err ? String((err as { message: unknown }).message) : "";
+      toast.error(detail ? `GRN failed: ${detail}` : friendlyError(err), { id: toastId, duration: 10000 });
     }
   };
 
