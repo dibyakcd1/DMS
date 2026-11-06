@@ -14,7 +14,6 @@ export async function deleteProductAndStock(productId: string): Promise<void> {
   await supabase.from("inventory").delete().eq("product_id", productId);
 
   // 3. Delete stock movements and inventory movements
-  await supabase.from("stock_movements").delete().eq("product_id", productId);
   await supabase.from("inventory_movements").delete().eq("product_id", productId);
 
   // 4. Delete price history
@@ -136,7 +135,6 @@ export async function fetchDatabaseStats(): Promise<DatabaseStats> {
  */
 export async function purgeAllInventoryAndBatches(): Promise<void> {
   await supabase.from("stock_ledger").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-  await supabase.from("stock_movements").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   await supabase.from("inventory_movements").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   await supabase.from("inventory_batches").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   await supabase.from("inventory").delete().neq("id", "00000000-0000-0000-0000-000000000000");

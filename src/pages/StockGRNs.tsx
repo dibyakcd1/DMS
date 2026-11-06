@@ -552,7 +552,7 @@ export default function StockGRNs() {
       // 1. Try invoking the safe database RPC first (enforcing is_admin_or_owner and dispatched stock checks)
       const { data: rpcRes, error: rpcErr } = await (supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>)(
         'delete_purchase_invoice',
-        { _invoice_id: grnToDelete.id }
+        { p_grn_id: grnToDelete.id }
       );
 
       if (rpcErr) {
@@ -582,7 +582,6 @@ export default function StockGRNs() {
         await supabase.from('purchase_invoice_items').delete().eq('purchase_invoice_id', grnToDelete.id);
         await supabase.from('grn_approval_log').delete().eq('grn_id', grnToDelete.id);
         await supabase.from('inventory_movements').delete().eq('reference_id', grnToDelete.id).eq('reference_type', 'purchase_invoice');
-        await supabase.from('stock_movements').delete().eq('reference_id', grnToDelete.id).eq('reference_type', 'purchase_invoice');
         await supabase.from('inventory_batches').delete().eq('purchase_invoice_id', grnToDelete.id);
 
         const { error: delErr } = await supabase.from('purchase_invoices').delete().eq('id', grnToDelete.id);

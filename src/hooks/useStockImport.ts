@@ -981,37 +981,7 @@ export function useStockImport(products: Product[]) {
 
       // 7. Record Stock Movements for audit and analytics
       try {
-        const movementRows = items.map(item => {
-          const p = products.find(px => px.id === item.productId);
-          const unitProfile = resolveUnitProfile(item.packType, p, {
-            units_per_packet: item.unitsPerPacket,
-            packets_per_case: item.packetsPerCase,
-            pack_size_value: p?.pack_size_value,
-            pack_size_unit: p?.pack_size_unit
-          });
-          const pricingProd: PricingProduct = {
-            id: item.productId,
-            units_per_packet: unitProfile.units_per_packet,
-            packets_per_case: unitProfile.packets_per_case,
-            mrp: p?.mrp || 0,
-            pack_size_value: p?.pack_size_value,
-            pack_size_unit: p?.pack_size_unit,
-            unit_type: p?.unit_type as "pcs" | "packet" | "kg_g" | null
-          };
-          const packMult = unitProfile.baseMultiplier || getPackMultiplier(pricingProd, item.packType);
-          const totalPcs = Number(item.quantity) * packMult;
-          return {
-            product_id: item.productId,
-            movement_type: "inward_purchase",
-            quantity: totalPcs,
-            warehouse_id: targetWhId,
-            reference_type: "purchase_invoice",
-            reference_id: grn.id,
-            notes: `Inward GRN from ${supplierName} (Invoice #${invoiceNumber || 'N/A'}${supplierGstn ? ' | GSTIN: ' + supplierGstn : ''})`,
-            created_at: new Date().toISOString()
-          };
-        });
-        await supabase.from("stock_movements").insert(movementRows);
+        // (legacy "stock_movements" table does not exist; inventory_movements below is the audit trail)
 
         // Also insert into inventory_movements for v_stock_ledger_details (Stock History audit trail)
         const invMovementRows = items.map((item) => {
@@ -1045,7 +1015,11 @@ export function useStockImport(products: Product[]) {
             created_at: new Date().toISOString()
           };
         });
-        await supabase.from("inventory_movements").insert(invMovementRows);
+        const { error: invMovErr } = await supabase.from("inventory_movements").insert(invMovementRows);
+        if (invMovErr) {
+          console.error("[GRN] inventory_movements insert failed (stock history only):", invMovErr);
+          toast.warning(`GRN saved, but stock history entry failed: ${invMovErr.message}`);
+        }
       } catch (movErr) {
         console.warn("Stock movement record notice:", movErr);
       }
@@ -1085,7 +1059,8 @@ export function useStockImport(products: Product[]) {
               });
               const allTiersToUpsert = Array.from(tierMap.values());
               if (allTiersToUpsert.length > 0) {
-                await supabase.from("product_price_tiers").upsert(allTiersToUpsert, { onConflict: "product_id,shop_type,pack_type" });
+                const { error: tierErr } = await supabase.from("product_price_tiers").upsert(allTiersToUpsert, { onConflict: "product_id,shop_type,pack_type" });
+                if (tierErr) console.error("[GRN] price tier sync failed:", tierErr.message, tierErr.details, tierErr.hint);
               }
             } catch (tErr) {
               console.warn("Price tier sync notice:", tErr);
